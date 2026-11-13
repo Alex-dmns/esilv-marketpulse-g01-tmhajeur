@@ -66,5 +66,7 @@ def main():
     display_market_summary(benchmark, benchmark_prices, show_currency=False)
 
 
+
+
 if __name__ == "__main__":
     main()
