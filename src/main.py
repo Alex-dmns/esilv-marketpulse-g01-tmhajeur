@@ -32,6 +32,12 @@ def get_last_close(prices):
     return float(prices[-1]["close"])
 
 
+def compute_return(prices):
+    first_close = get_first_close(prices)
+    last_close = get_last_close(prices)
+    return (last_close - first_close) / first_close * 100
+
+
 def display_market_summary(asset, prices, show_currency=True):
     ticker = asset["ticker"]
     name = asset["name"]
@@ -43,6 +49,7 @@ def display_market_summary(asset, prices, show_currency=True):
     print(f"Observations : {len(prices)}")
     print(f"First close  : {first_close:.2f}{currency_str}")
     print(f"Last close   : {last_close:.2f}{currency_str}")
+    print(f"Return       : {compute_return(prices):+.2f} %")
 
 def main():
     instruments = load_instruments()
@@ -69,9 +76,3 @@ def main():
 
 if __name__ == "__main__":
     main()
-
-
-
-
-
-
