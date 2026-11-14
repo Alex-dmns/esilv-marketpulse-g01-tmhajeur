@@ -34,9 +34,12 @@ def get_last_date(prices):
     return prices[-1]["date"]
 
 
-def print_summary(title, label, prices, currency=""):
+def print_summary(title, info, prices):
+    currency = info["currency"]
     print(title)
-    print(label)
+    print(f"{info['ticker']} - {info['name']}")
+    print(f"Market       : {info['market']}")
+    print(f"Currency     : {currency}")
     print(f"Observations : {len(prices)}")
     print(f"First date   : {get_first_date(prices)}")
     print(f"Last date    : {get_last_date(prices)}")
@@ -57,10 +60,8 @@ def main():
 
     print("=== MarketPulse ===")
     print()
-    print_summary("Instrument", f"{instrument['ticker']} - {instrument['name']}",
-                  instrument_prices, instrument["currency"])
-    print_summary("Benchmark", f"{benchmark['ticker']} - {benchmark['name']}",
-                  benchmark_prices)
+    print_summary("Instrument", instrument, instrument_prices)
+    print_summary("Benchmark", benchmark, benchmark_prices)
     print(f"Period: {LOOKBACK_LABEL}")
     print(f"Interval: {INTERVAL_LABEL}")
     print(f"Provider: {PROVIDER_LABEL}")
