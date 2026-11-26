@@ -1,0 +1,3 @@
+# External dependencies are added progressively during the labs.
+# TD01/TD02 intentionally use only the Python standard library.
+yfinance
