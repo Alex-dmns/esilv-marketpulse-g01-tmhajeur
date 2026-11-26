@@ -8,6 +8,7 @@ from analytics import (
     calculate_period_return,
     calculate_relative_performance,
 )
+from providers import bloomberg_provider
 from providers.yahoo_provider import YAHOO_SYMBOLS, fetch_yahoo_prices
 
 
@@ -18,7 +19,8 @@ DATA_DIR = Path("data/sample")
 # Parsing YAML is optional and is not required by the 18-hour lab sequence.
 LOOKBACK_LABEL = "1 month"
 INTERVAL_LABEL = "Daily"
-PROVIDER_LABEL = "Yahoo Finance via yfinance"
+
+DEFAULT_PROVIDER = "bloomberg"
 
 YAHOO_PERIOD = "1mo"
 YAHOO_INTERVAL = "1d"
@@ -29,7 +31,7 @@ def load_instruments():
         return json.load(file)
 
 
-# Local CSV path, kept to validate analytics if Yahoo is unavailable.
+# Local CSV path, kept to validate analytics if a provider is unavailable.
 def load_prices():
     with open(DATA_DIR / "prices.csv", encoding="utf-8") as file:
         return list(csv.DictReader(file))
@@ -51,7 +53,7 @@ def normalize_price_row(row):
     }
 
 
-def fetch_asset_prices(asset):
+def fetch_yahoo_asset_prices(asset):
     ticker = asset["ticker"]
     return fetch_yahoo_prices(
         symbol=YAHOO_SYMBOLS[ticker],
@@ -61,14 +63,33 @@ def fetch_asset_prices(asset):
     )
 
 
-def main():
-    instruments = load_instruments()
+# Every provider returns canonical rows; only the label and source differ.
+def fetch_market_prices(provider, instrument, benchmark):
+    if provider == "bloomberg":
+        label = f"Bloomberg stage ({bloomberg_provider.ACCESS_MODE})"
+        instrument_prices = bloomberg_provider.fetch_bloomberg_prices(instrument["ticker"])
+        benchmark_prices = bloomberg_provider.fetch_bloomberg_prices(benchmark["ticker"])
+    elif provider == "yahoo":
+        label = "Yahoo Finance via yfinance"
+        instrument_prices = fetch_yahoo_asset_prices(instrument)
+        benchmark_prices = fetch_yahoo_asset_prices(benchmark)
+    else:
+        raise ValueError(f"Unsupported provider: {provider}")
 
+    return label, instrument_prices, benchmark_prices
+
+
+# Shared application result, consumed by the terminal (TD10) and Dash (TD11).
+def build_market_snapshot(provider=DEFAULT_PROVIDER):
+    instruments = load_instruments()
     instrument = instruments["instrument"]
     benchmark = instruments["benchmark"]
 
-    instrument_prices = fetch_asset_prices(instrument)
-    benchmark_prices = fetch_asset_prices(benchmark)
+    provider_label, instrument_prices, benchmark_prices = fetch_market_prices(
+        provider,
+        instrument,
+        benchmark,
+    )
 
     aligned_instrument, aligned_benchmark = align_series(
         instrument_prices,
@@ -77,36 +98,64 @@ def main():
 
     instrument_return = calculate_period_return(aligned_instrument)
     benchmark_return = calculate_period_return(aligned_benchmark)
-    relative_perf = calculate_relative_performance(instrument_return, benchmark_return)
 
-    instrument_base100 = calculate_base_100(aligned_instrument)
-    benchmark_base100 = calculate_base_100(aligned_benchmark)
+    return {
+        "provider": provider_label,
+        "access_mode": bloomberg_provider.ACCESS_MODE if provider == "bloomberg" else "LIVE",
+        "lookback": LOOKBACK_LABEL,
+        "interval": INTERVAL_LABEL,
+        "instrument": instrument,
+        "benchmark": benchmark,
+        "instrument_return": instrument_return,
+        "benchmark_return": benchmark_return,
+        "relative_performance": calculate_relative_performance(
+            instrument_return,
+            benchmark_return,
+        ),
+        "instrument_base_100": calculate_base_100(aligned_instrument),
+        "benchmark_base_100": calculate_base_100(aligned_benchmark),
+    }
+
+
+def main():
+    snapshot = build_market_snapshot()
+
+    instrument = snapshot["instrument"]
+    benchmark = snapshot["benchmark"]
+    instrument_base_100 = snapshot["instrument_base_100"]
+    benchmark_base_100 = snapshot["benchmark_base_100"]
 
     print("=== MarketPulse ===")
     print()
     print("Provider")
-    print(PROVIDER_LABEL)
+    print(snapshot["provider"])
+    print()
+    print("Access mode")
+    print(snapshot["access_mode"])
     print()
     print("Market configuration")
     print(f"Instrument : {instrument['ticker']} - {instrument['name']}")
     print(f"Benchmark  : {benchmark['ticker']} - {benchmark['name']}")
-    print(f"Period     : {LOOKBACK_LABEL}")
-    print(f"Interval   : {INTERVAL_LABEL}")
+    print(f"Period     : {snapshot['lookback']}")
+    print(f"Interval   : {snapshot['interval']}")
     print()
     print("Common observations")
-    print(f"Count      : {len(aligned_instrument)}")
-    print(f"First date : {aligned_instrument[0]['date']}")
-    print(f"Last date  : {aligned_instrument[-1]['date']}")
+    print(f"Count      : {len(instrument_base_100)}")
+    print(f"First date : {instrument_base_100[0]['date']}")
+    print(f"Last date  : {instrument_base_100[-1]['date']}")
     print()
-    print(f"Instrument return : {instrument_return:.2f}%")
-    print(f"Benchmark return  : {benchmark_return:.2f}%")
+    print(f"Instrument return : {snapshot['instrument_return']:.2f}%")
+    print(f"Benchmark return  : {snapshot['benchmark_return']:.2f}%")
     print()
     print("Relative performance")
-    print(f"{instrument['ticker']} vs {benchmark['ticker']} : {relative_perf:+.2f} percentage points")
+    print(
+        f"{instrument['ticker']} vs {benchmark['ticker']} : "
+        f"{snapshot['relative_performance']:+.2f} percentage points"
+    )
     print()
     print("Base 100")
-    print(f"{instrument['ticker']:<6}: {instrument_base100[0]['value']:.2f} -> {instrument_base100[-1]['value']:.2f}")
-    print(f"{benchmark['ticker']:<6}: {benchmark_base100[0]['value']:.2f} -> {benchmark_base100[-1]['value']:.2f}")
+    print(f"{instrument['ticker']:<6}: {instrument_base_100[0]['value']:.2f} -> {instrument_base_100[-1]['value']:.2f}")
+    print(f"{benchmark['ticker']:<6}: {benchmark_base_100[0]['value']:.2f} -> {benchmark_base_100[-1]['value']:.2f}")
 
 
 if __name__ == "__main__":
