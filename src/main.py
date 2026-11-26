@@ -15,6 +15,7 @@ DATA_DIR = Path("data/sample")
 # Parsing YAML is optional and is not required by the 18-hour lab sequence.
 LOOKBACK_LABEL = "1 month"
 INTERVAL_LABEL = "Daily"
+PROVIDER_LABEL = "CSV sample data"
 
 
 def load_instruments():
