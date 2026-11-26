@@ -7,6 +7,7 @@ from analytics import (
     calculate_period_return,
     calculate_relative_performance,
 )
+from providers.yahoo_provider import YAHOO_SYMBOLS, fetch_yahoo_prices
 
 DATA_DIR = Path("data/sample")
 
@@ -15,7 +16,9 @@ DATA_DIR = Path("data/sample")
 # Parsing YAML is optional and is not required by the 18-hour lab sequence.
 LOOKBACK_LABEL = "1 month"
 INTERVAL_LABEL = "Daily"
-PROVIDER_LABEL = "CSV sample data"
+PROVIDER_LABEL = "Yahoo Finance via yfinance"
+YAHOO_PERIOD = "1mo"
+YAHOO_INTERVAL = "1d"
 
 
 def load_instruments():
@@ -45,18 +48,24 @@ def normalize_price_row(row):
 
 def main():
     instruments = load_instruments()
-    prices = load_prices()
-
-    normalized_prices = [
-        normalize_price_row(row)
-        for row in prices
-    ]
 
     instrument = instruments["instrument"]
     benchmark = instruments["benchmark"]
 
-    instrument_prices = filter_prices(normalized_prices, instrument["ticker"])
-    benchmark_prices = filter_prices(normalized_prices, benchmark["ticker"])
+    # Yahoo path: provider symbols stay at the provider boundary,
+    # rows keep the canonical tickers (AAPL, SP500).
+    instrument_prices = fetch_yahoo_prices(
+        symbol=YAHOO_SYMBOLS[instrument["ticker"]],
+        canonical_ticker=instrument["ticker"],
+        period=YAHOO_PERIOD,
+        interval=YAHOO_INTERVAL,
+    )
+    benchmark_prices = fetch_yahoo_prices(
+        symbol=YAHOO_SYMBOLS[benchmark["ticker"]],
+        canonical_ticker=benchmark["ticker"],
+        period=YAHOO_PERIOD,
+        interval=YAHOO_INTERVAL,
+    )
 
     aligned_instrument, aligned_benchmark = align_series(
         instrument_prices,
@@ -72,9 +81,16 @@ def main():
 
     print("=== MarketPulse ===")
     print()
+    print("Provider")
+    print(PROVIDER_LABEL)
+    print()
     print("Market configuration")
     print(f"Period   : {LOOKBACK_LABEL}")
     print(f"Interval : {INTERVAL_LABEL}")
+    print(
+        f"Common dates : {len(aligned_instrument)} "
+        f"({aligned_instrument[0]['date']} -> {aligned_instrument[-1]['date']})"
+    )
     print()
     print("Instrument")
     print(f"{instrument['ticker']} - {instrument['name']}")
