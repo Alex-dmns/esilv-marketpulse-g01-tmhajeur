@@ -19,6 +19,50 @@
 
 > Acquire market data from several provider stages, normalize it to one canonical contract, compare one instrument with its benchmark, then expose the same application result through the terminal and a Dash dashboard.
 
+## Team release - G01 Tmahjeur
+
+This section describes the team's final release. The rest of this README is the instructor's course reference.
+
+| Item | Value |
+|---|---|
+| Instrument | AAPL - Apple Inc. |
+| Benchmark | SP500 - S&P 500 |
+| Lookback / Interval | 1 month / Daily |
+| Final provider (default) | **Bloomberg stage - `APPROVED_SAMPLE`** (instructor fixture `data/sample/bloomberg_reference_sample.json`, not LIVE Bloomberg) |
+| Alternative provider | Yahoo Finance via `yfinance` (LIVE, needs internet): `build_market_snapshot("yahoo")` |
+
+### Install and run
+
+From the repository root:
+
+```bash
+python -m pip install -r requirements.txt
+python src/main.py
+python src/dashboard.py
+```
+
+The dashboard is then available at <http://127.0.0.1:8050>.
+
+### Environment constraints
+
+- Python 3 is required. On macOS, use `python3` instead of `python` if `python` is not found.
+- Run every command from the repository root: the sample data paths are relative to it.
+- No Bloomberg terminal or credentials are needed: the default provider reads the approved sample, so the default run works offline.
+
+### Expected result (default provider)
+
+```text
+Provider            : Bloomberg stage (APPROVED_SAMPLE)
+Common observations : 21 (2026-09-01 -> 2026-09-30)
+Instrument return   : 6.48%
+Benchmark return    : 2.15%
+Relative performance: +4.33 percentage points
+```
+
+### Evidence
+
+Checkpoint evidence is stored under `evidence/checkpoint-c/<github-username>/`.
+
 ### ⚡ Languages and Tools
 
 <p align="center">
