@@ -8,14 +8,10 @@ live Bloomberg connection. Mapping source: docs/BLOOMBERG_FIELD_MAPPING.md.
 import json
 from pathlib import Path
 
-
 ACCESS_MODE = "APPROVED_SAMPLE"
 
 SAMPLE_PATH = (
-    Path(__file__).resolve().parents[2]
-    / "data"
-    / "sample"
-    / "bloomberg_reference_sample.json"
+    Path(__file__).resolve().parents[2] / "data" / "sample" / "bloomberg_reference_sample.json"
 )
 
 # Canonical MarketPulse ticker -> Bloomberg identifier.

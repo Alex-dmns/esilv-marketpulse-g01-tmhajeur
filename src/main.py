@@ -1,6 +1,6 @@
-from pathlib import Path
 import csv
 import json
+from pathlib import Path
 
 from analytics import (
     align_series,
@@ -10,7 +10,6 @@ from analytics import (
 )
 from providers import bloomberg_provider
 from providers.yahoo_provider import YAHOO_SYMBOLS, fetch_yahoo_prices
-
 
 DATA_DIR = Path(__file__).resolve().parent.parent / "data" / "sample"
 
@@ -129,6 +128,12 @@ def build_market_snapshot(provider=DEFAULT_PROVIDER):
     }
 
 
+def format_base_100(asset, base_100):
+    first_value = base_100[0]["value"]
+    last_value = base_100[-1]["value"]
+    return f"{asset['ticker']:<6}: {first_value:.2f} -> {last_value:.2f}"
+
+
 def main():
     snapshot = build_market_snapshot()
 
@@ -166,8 +171,8 @@ def main():
     )
     print()
     print("Base 100")
-    print(f"{instrument['ticker']:<6}: {instrument_base_100[0]['value']:.2f} -> {instrument_base_100[-1]['value']:.2f}")
-    print(f"{benchmark['ticker']:<6}: {benchmark_base_100[0]['value']:.2f} -> {benchmark_base_100[-1]['value']:.2f}")
+    print(format_base_100(instrument, instrument_base_100))
+    print(format_base_100(benchmark, benchmark_base_100))
 
 
 if __name__ == "__main__":

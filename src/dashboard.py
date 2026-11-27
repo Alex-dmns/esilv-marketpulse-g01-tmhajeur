@@ -1,8 +1,7 @@
-from dash import Dash, dcc, html
 import plotly.graph_objects as go
+from dash import Dash, dcc, html
 
 from main import build_market_snapshot
-
 
 # Presentation only: no provider call and no formula here.
 snapshot = build_market_snapshot()
