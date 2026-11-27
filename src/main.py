@@ -53,6 +53,12 @@ def normalize_price_row(row):
     }
 
 
+# Local CSV provider: string rows -> canonical rows.
+def fetch_csv_asset_prices(prices, asset):
+    rows = filter_prices(prices, asset["ticker"])
+    return [normalize_price_row(row) for row in rows]
+
+
 def fetch_yahoo_asset_prices(asset):
     ticker = asset["ticker"]
     return fetch_yahoo_prices(
@@ -67,16 +73,24 @@ def fetch_yahoo_asset_prices(asset):
 def fetch_market_prices(provider, instrument, benchmark):
     if provider == "bloomberg":
         label = f"Bloomberg stage ({bloomberg_provider.ACCESS_MODE})"
+        access_mode = bloomberg_provider.ACCESS_MODE
         instrument_prices = bloomberg_provider.fetch_bloomberg_prices(instrument["ticker"])
         benchmark_prices = bloomberg_provider.fetch_bloomberg_prices(benchmark["ticker"])
     elif provider == "yahoo":
         label = "Yahoo Finance via yfinance"
+        access_mode = "LIVE"
         instrument_prices = fetch_yahoo_asset_prices(instrument)
         benchmark_prices = fetch_yahoo_asset_prices(benchmark)
+    elif provider == "csv":
+        label = "Local CSV sample (data/sample/prices.csv)"
+        access_mode = "LOCAL_SAMPLE"
+        prices = load_prices()
+        instrument_prices = fetch_csv_asset_prices(prices, instrument)
+        benchmark_prices = fetch_csv_asset_prices(prices, benchmark)
     else:
         raise ValueError(f"Unsupported provider: {provider}")
 
-    return label, instrument_prices, benchmark_prices
+    return label, access_mode, instrument_prices, benchmark_prices
 
 
 # Shared application result, consumed by the terminal (TD10) and Dash (TD11).
@@ -85,7 +99,7 @@ def build_market_snapshot(provider=DEFAULT_PROVIDER):
     instrument = instruments["instrument"]
     benchmark = instruments["benchmark"]
 
-    provider_label, instrument_prices, benchmark_prices = fetch_market_prices(
+    provider_label, access_mode, instrument_prices, benchmark_prices = fetch_market_prices(
         provider,
         instrument,
         benchmark,
@@ -101,7 +115,7 @@ def build_market_snapshot(provider=DEFAULT_PROVIDER):
 
     return {
         "provider": provider_label,
-        "access_mode": bloomberg_provider.ACCESS_MODE if provider == "bloomberg" else "LIVE",
+        "access_mode": access_mode,
         "lookback": LOOKBACK_LABEL,
         "interval": INTERVAL_LABEL,
         "instrument": instrument,

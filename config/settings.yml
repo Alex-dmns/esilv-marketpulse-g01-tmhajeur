@@ -6,7 +6,7 @@ app:
   name: MarketPulse
 
 market:
-  provider: csv
+  provider: bloomberg
   lookback: 1mo
   interval: 1d
 
