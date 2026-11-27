@@ -13,7 +13,7 @@
 | Alexandre Damianos | @Alex-dmns |
 | Maximilien Bernard | @github-user-2 |
 | Julie Yerolymos | @github-user-3 |
-| Hadrien Bertin | @github-user-4 |
+| Hadrien Bertin | @Hadrien-B17 |
 
 ## Repository
 
