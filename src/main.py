@@ -12,7 +12,7 @@ from providers import bloomberg_provider
 from providers.yahoo_provider import YAHOO_SYMBOLS, fetch_yahoo_prices
 
 
-DATA_DIR = Path("data/sample")
+DATA_DIR = Path(__file__).resolve().parent.parent / "data" / "sample"
 
 # These starter values mirror config/settings.yml.
 # settings.yml is a human-readable configuration contract in the CORE.
@@ -21,6 +21,13 @@ LOOKBACK_LABEL = "1 month"
 INTERVAL_LABEL = "Daily"
 
 DEFAULT_PROVIDER = "bloomberg"
+
+# Honest access mode shown to the user for each provider.
+ACCESS_MODES = {
+    "bloomberg": bloomberg_provider.ACCESS_MODE,
+    "yahoo": "LIVE (remote Yahoo Finance)",
+    "csv": "LOCAL_SAMPLE",
+}
 
 YAHOO_PERIOD = "1mo"
 YAHOO_INTERVAL = "1d"
@@ -73,6 +80,11 @@ def fetch_market_prices(provider, instrument, benchmark):
         label = "Yahoo Finance via yfinance"
         instrument_prices = fetch_yahoo_asset_prices(instrument)
         benchmark_prices = fetch_yahoo_asset_prices(benchmark)
+    elif provider == "csv":
+        label = "CSV sample data"
+        prices = [normalize_price_row(row) for row in load_prices()]
+        instrument_prices = filter_prices(prices, instrument["ticker"])
+        benchmark_prices = filter_prices(prices, benchmark["ticker"])
     else:
         raise ValueError(f"Unsupported provider: {provider}")
 
@@ -101,7 +113,7 @@ def build_market_snapshot(provider=DEFAULT_PROVIDER):
 
     return {
         "provider": provider_label,
-        "access_mode": bloomberg_provider.ACCESS_MODE if provider == "bloomberg" else "LIVE",
+        "access_mode": ACCESS_MODES[provider],
         "lookback": LOOKBACK_LABEL,
         "interval": INTERVAL_LABEL,
         "instrument": instrument,
